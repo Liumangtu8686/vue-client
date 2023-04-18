@@ -26,18 +26,19 @@ const isLoading = ref(false);
 
 const messageList = ref(null);
 
-//用户剩余次数
+//记忆模式用户剩余次数
 const amount = ref(0);
 
-//用户剩余次数
+//普通模式用户剩余次数
 const normalCount = ref(0);
 
+//是否普通模式
 const isNormal = ref(true);
 
-
+//记忆模式 流模式:true 非流模式：false
 const isStreamMode = ref(false);
 
-
+//是否显示等待数据响应动画
 const isLoging = ref(true);
 
 
