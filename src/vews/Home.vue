@@ -29,6 +29,9 @@ const messageList = ref(null);
 //用户剩余次数
 const amount = ref(0);
 
+//用户剩余次数
+const normalCount = ref(0);
+
 const isNormal = ref(true);
 
 
@@ -121,6 +124,7 @@ async function getAmount() {
     });
   }
   amount.value = res.amount;
+  normalCount.value = res.normalCount;
 }
 
 // 重置上下文节点
@@ -228,18 +232,23 @@ function setScreen() {
 }
 
 async function sendNotStreamMessage() {
-   //发送时验证登录
-   if (localStorage.getItem("access_token") == null)
-      return ElMessage({
-        message: "please login in",
-        type: "error",
-      });
+  //发送时验证登录
+  if (localStorage.getItem("access_token") == null)
+      router.replace('/login')
   //判断用户次数
-  if (amount.value <= 0)
+  if (amount.value <= 0){
+    {
+      const managerData = { text: "充值请备注注册手机号或者登录用户名,入群请添加管理员好友", type: "manager", index: messages.value.length};
+      messages.value.push(managerData);
+    }
+    
+    setScreen();
     return ElMessage({
-      message: "Your remaining amount are insufficient, please recharge!",
+      message: "剩余次数不足先前往充值",
       type: "error",
     });
+  }
+    
 
  // 我们提问的内容
   const message = newMessage.value;
@@ -262,7 +271,13 @@ async function sendNotStreamMessage() {
     // 显示加载动画
     isLoading.value = true; // 显示加载动画
     res = await cloud.invoke("test", { message });
-    const receivedData = { text: res, type: "received", index: messages.value.length};
+    if (res.code == 0) {
+      return ElMessage({
+        message: res.err,
+        type: "error",
+      });
+    }
+    const receivedData = { text: res.text, type: "received", index: messages.value.length};
     messages.value.push(receivedData);
     setScreen();
 
@@ -281,7 +296,21 @@ async function sendNotStreamMessage() {
 async function sendQuickMessage() {
   //发送时验证登录
   if (localStorage.getItem("access_token") == null)
-    loginIn()
+      router.replace('/login')
+  //判断用户次数
+  if (normalCount.value <= 0){
+    {
+      const managerData = { text: "充值请备注注册手机号或者登录用户名,入群请添加管理员好友", type: "manager", index: messages.value.length};
+      messages.value.push(managerData);
+    }
+    
+    setScreen();
+    return ElMessage({
+      message: "剩余次数不足先前往充值",
+      type: "error",
+    });
+  }
+    
 
  // 我们提问的内容
   const message = newMessage.value;
@@ -306,6 +335,12 @@ async function sendQuickMessage() {
    
     res = await cloud.invoke("robot", {messages: messages.value });
     
+    if (res.code == 0) {
+      return ElMessage({
+        message: res.err,
+        type: "error",
+      });
+    }
     res.index = messages.value.length;
     res.type = "received";
     res.role = 'assistant';
