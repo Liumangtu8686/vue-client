@@ -207,6 +207,7 @@ async function sendStreamMessage() {
         const newData = responseText.substring(messages.value[nextMessageIndex].text.length);
         messages.value[curMessageIndex + 1].text += newData;
         setScreen();
+        getAmount();
       }
     }).then((response) => {
      // 监听end事件
@@ -280,7 +281,7 @@ async function sendNotStreamMessage() {
     const receivedData = { text: res.text, type: "received", index: messages.value.length};
     messages.value.push(receivedData);
     setScreen();
-
+    getAmount();
     // 收到服务器回复后隐藏加载动画
     isLoading.value = false; // 隐藏加载动画
   } catch (error) {
@@ -289,8 +290,6 @@ async function sendNotStreamMessage() {
     isLoading.value = false; // 隐藏加载动画
     return;
   }
-
-  getAmount();
 }
 
 async function sendQuickMessage() {
@@ -353,7 +352,7 @@ async function sendQuickMessage() {
     res.text = responseText;
     messages.value.push(res);
     setScreen();
-
+    getAmount();
     // 收到服务器回复后隐藏加载动画
     isLoading.value = false; // 隐藏加载动画
   } catch (error) {
@@ -524,6 +523,10 @@ async function loginIn() {
           <div v-if="message.type === 'sent' " class="img" style="flex: 1;text-align:right"> 
               <i class="user-icon"></i>
           </div>
+          <div v-if="message.type === 'manager' " class="img" style="flex: 1;text-align:center"> 
+              <i class="manager-icon"></i>
+              <p class="message-manager-content">{{ message.text }}</p>
+          </div>
           <div v-if="message.type === 'received' " class="img" style="flex: 1;text-align:left"> 
               <i class="robot-icon"></i>
               <div v-if="isMarkdownImage(message.text)" v-html="parseMarkdown(message.text)"></div>
@@ -531,7 +534,7 @@ async function loginIn() {
               <div v-html="parse3DImage(message.text)"></div>
             </div>
           </div>
-          <div class="bubble" style="flex: 1" v-if="!isMarkdownImage(message.text) && !is3DImage(message.text)"> 
+          <div class="bubble" style="flex: 1" v-if="message.type != 'manager' && !isMarkdownImage(message.text) && !is3DImage(message.text)"> 
             <span class="container"> 
               <p class="message-content" >{{ message.text }}</p>
               <button v-if="message.type === 'received' && message.text != ''" @click="copyText(message.text)">复制</button>
@@ -662,6 +665,13 @@ async function loginIn() {
   word-break: break-all;
 }
 
+.message-manager-content {
+  white-space: pre-wrap;
+  word-break: break-all;
+  text-align:center;
+}
+
+
 .input-box {
   display: flex;
   align-items: center;
@@ -706,6 +716,16 @@ async function loginIn() {
 .container {
   display: flex;
   align-items: center;
+}
+
+.manager-icon{
+  background-image: url('@/assets/test.png');
+  width: 800px;
+  height: 400px;
+  display: inline-block;
+  background-size: cover; /* 或者使用 contain */
+  margin-right: 5px;
+  text-align: center;
 }
 
 .user-icon {
