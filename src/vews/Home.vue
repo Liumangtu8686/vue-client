@@ -50,6 +50,7 @@ if (localStorage.getItem('access_token') != null) {
   isLoging.value = false;
 }
 
+
 // ===============================function===============================
 
 async function submitPost(messages, res) {
@@ -57,7 +58,40 @@ async function submitPost(messages, res) {
   const txt2imgUrl = 'https://237bd3d3.r1.cpolar.top/sdapi/v1/txt2img';
   const data = {
     prompt: res.text,
-    step: '5'
+    enable_hr: false,
+    denoising_strength: 0,
+    firstphase_width: 0,
+    firstphase_height: 0,
+    hr_scale: 2,
+    hr_second_pass_steps: 0,
+    hr_resize_x: 0,
+    hr_resize_y: 0,
+   seed: -1,
+   subseed: -1,
+   subseed_strength: 0,
+   seed_resize_from_h: -1,
+   seed_resize_from_w: -1,
+   batch_size: 1,
+   n_iter: 1,
+   steps: 50,
+   cfg_scale: 7,
+   width: 512,
+   height: 512,
+   restore_faces: false,
+   tiling: false,
+   do_not_save_samples: false,
+   do_not_save_grid: false,
+   eta: 0,
+   s_churn: 0,
+   s_tmax: 0,
+   s_tmin: 0,
+   s_noise: 1,
+   override_settings: {},
+   override_settings_restore_afterwards: true,
+   script_args: [],
+   send_images: true,
+   save_images: false,
+   alwayson_scripts: {}
   };
   const response = await axios.post(txt2imgUrl, data);
   const b64Image = response.data.images[0];
