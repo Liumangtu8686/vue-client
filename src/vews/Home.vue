@@ -38,9 +38,11 @@ const isNormal = ref(true);
 //记忆模式 流模式:true 非流模式：false
 const isStreamMode = ref(false);
 
+//是否画图模式
+const isGragh = ref(false);
+
 //是否显示等待数据响应动画
 const isLoging = ref(true);
-
 
 if (localStorage.getItem('access_token') != null) {
   isLoging.value = true;
@@ -49,6 +51,35 @@ if (localStorage.getItem('access_token') != null) {
 }
 
 // ===============================function===============================
+
+async function submitPost(messages, res) {
+  isLoading.value = true; 
+  const txt2imgUrl = 'https://237bd3d3.r1.cpolar.top/sdapi/v1/txt2img';
+  const data = {
+    prompt: res.text,
+    step: '5'
+  };
+  const response = await axios.post(txt2imgUrl, data);
+  const b64Image = response.data.images[0];
+  res.imageUrl = getEncodedImage(b64Image);
+  messages.value.push(res);
+  isLoading.value = false; // 隐藏加载动画
+  setScreen();
+  getAmount();
+}
+
+function getEncodedImage(b64Image) {
+  const decodedImage = atob(b64Image);
+  const arrayBuffer = new ArrayBuffer(decodedImage.length);
+  const uint8Array = new Uint8Array(arrayBuffer);
+  for (let i = 0; i < decodedImage.length; i++) {
+    uint8Array[i] = decodedImage.charCodeAt(i);
+  }
+  const blob = new Blob([arrayBuffer], {
+    type: 'image/png'
+  });
+  return URL.createObjectURL(blob);
+}
 
 // 获取用户剩余次数
 getAmount();
@@ -140,16 +171,19 @@ async function resetParentMessageId() {
 }
 
 async function sendMessage() {
-  if (isNormal.value) {
+  if (isGragh.value) {
     sendQuickMessage();
   } else {
-    if (isStreamMode.value) {
-      sendStreamMessage();
+    if (isNormal.value) {
+      sendQuickMessage();
     } else {
-      sendNotStreamMessage();
+      if (isStreamMode.value) {
+        sendStreamMessage();
+      } else {
+        sendNotStreamMessage();
+      }
     }
-    
-  }
+  } 
 }
 
 
@@ -310,8 +344,8 @@ async function sendQuickMessage() {
       type: "error",
     });
   }
-    
 
+  let graghCmd = "接下来我会给你指令，我希望你用英文翻译描述尽可能准确点，除了描述不要回复任何话，只要翻译。指令如下：";
  // 我们提问的内容
   const message = newMessage.value;
   if (message == "") {
@@ -323,7 +357,8 @@ async function sendQuickMessage() {
     });
   }
   newMessage.value = '';
-  const data = { text: message, type: "sent", index: messages.value.length, role:'user',content: message};
+
+  const data = { text: message, type: "sent", index: messages.value.length, role:'user',content: isGragh.value ? graghCmd + message : message};
   messages.value.push(data);
   // 在聊天框元素实例上手动触发scroll事件，以检测当前的滚动位置是否需要自动滚动到底部
   setScreen();
@@ -332,7 +367,6 @@ async function sendQuickMessage() {
     // 显示加载动画
     isLoading.value = true; // 显示加载动画
 // 与云函数逻辑一样，有上下文 id 就传入
-   
     res = await cloud.invoke("robot", {messages: messages.value });
     
     if (res.code == 0) {
@@ -351,11 +385,15 @@ async function sendQuickMessage() {
     responseText = responseText.replace(/展映/g, ""); 
     res.content = responseText;
     res.text = responseText;
-    messages.value.push(res);
-    setScreen();
-    getAmount();
-    // 收到服务器回复后隐藏加载动画
-    isLoading.value = false; // 隐藏加载动画
+    if (isGragh) { //画图
+      submitPost(messages, res)
+    } else {
+      messages.value.push(res);
+      setScreen();
+      getAmount();
+      // 收到服务器回复后隐藏加载动画
+      isLoading.value = false; // 隐藏加载动画
+    }
   } catch (error) {
     console.log(error);
     setScreen();
@@ -371,6 +409,10 @@ async function handleCheckboxChange() {
 
 async function handleCheckboxStreamChange() {
   isStreamMode.value = !isStreamMode.value;
+}
+
+async function handleCheckboxGraghChange() {
+  isGragh.value = !isGragh.value;
 }
 
 async function loginOut() {
@@ -393,6 +435,9 @@ async function loginIn() {
     <div class="conversation" ref="chatBox">
       <div class="about"> 
         <div class="input-group" >
+          <span style="text-align: center;color:#9ca2a8">&nbsp;&nbsp;画图：</span>
+          <input type="checkbox" id="keep"  style="min-width:10px;"  v-mode = "isGragh" @change="handleCheckboxGraghChange">
+          <label for="keep"></label>
           <span style="text-align: center;color:#9ca2a8">&nbsp;&nbsp;记忆模式：</span>
           <input type="checkbox" id="keep"  style="min-width:10px;"  v-mode = "isNormal" @change="handleCheckboxChange" >
           <label for="keep"></label>
@@ -531,14 +576,17 @@ async function loginIn() {
           <div v-if="message.type === 'received' " class="img" style="flex: 1;text-align:left"> 
               <i class="robot-icon"></i>
               <div v-if="isMarkdownImage(message.text)" v-html="parseMarkdown(message.text)"></div>
-            <div v-else-if="is3DImage(message.text)">
-              <div v-html="parse3DImage(message.text)"></div>
-            </div>
+              <div v-else-if="is3DImage(message.text)">
+                <div v-html="parse3DImage(message.text)"></div>
+              </div>
           </div>
-          <div class="bubble" style="flex: 1" v-if="message.type != 'manager' && !isMarkdownImage(message.text) && !is3DImage(message.text)"> 
+          <div class="img-bubble" style="flex: 1" v-if="message.imageUrl"> 
+            <img :src="message.imageUrl" v-if="message.imageUrl" alt="转换后的图片">
+          </div>
+          <div class="bubble" style="flex: 1" v-if="message.type != 'manager' && !isMarkdownImage(message.text) && !is3DImage(message.text) && !message.imageUrl"> 
             <span class="container"> 
-              <p class="message-content" >{{ message.text }}</p>
-              <button v-if="message.type === 'received' && message.text != ''" @click="copyText(message.text)">复制</button>
+              <p class="message-content">{{ message.text }}</p>
+              <button v-if="message.type === 'received' && message.text != '' && !message.imageUrl" @click="copyText(message.text)">复制</button>
             </span>
           </div>
         </div>
@@ -694,6 +742,13 @@ async function loginIn() {
 .received .bubble {
   background-color: #aed9df;
   color: #fff;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+
+.img-bubble {
+  background-color: #ffff;
   border-radius: 10px;
   padding: 10px;
 }
