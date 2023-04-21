@@ -50,12 +50,11 @@ if (localStorage.getItem('access_token') != null) {
   isLoging.value = false;
 }
 
-
 // ===============================function===============================
 
 async function submitPost(messages, res) {
   isLoading.value = true; 
-  const txt2imgUrl = 'https://237bd3d3.r1.cpolar.top/sdapi/v1/txt2img';
+  const txt2imgUrl = 'https://2a966fe2.r1.cpolar.top/sdapi/v1/txt2img';
   const data = {
     prompt: res.text,
     enable_hr: false,
@@ -81,6 +80,7 @@ async function submitPost(messages, res) {
    tiling: false,
    do_not_save_samples: false,
    do_not_save_grid: false,
+   negative_prompt: "low quality",
    eta: 0,
    s_churn: 0,
    s_tmax: 0,
@@ -90,7 +90,7 @@ async function submitPost(messages, res) {
    override_settings_restore_afterwards: true,
    script_args: [],
    send_images: true,
-   save_images: false,
+   save_images: true,
    alwayson_scripts: {}
   };
   const response = await axios.post(txt2imgUrl, data);
@@ -419,7 +419,7 @@ async function sendQuickMessage() {
     responseText = responseText.replace(/展映/g, ""); 
     res.content = responseText;
     res.text = responseText;
-    if (isGragh) { //画图
+    if (isGragh.value) { //画图
       submitPost(messages, res)
     } else {
       messages.value.push(res);
