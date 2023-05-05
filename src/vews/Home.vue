@@ -9,14 +9,14 @@ const md = new MarkdownIt();
 
 // 创建cloud对象
 const cloud = new Cloud({
-  baseUrl: "https://ztvufn.laf.dev", // 这里的 <AppID> 需要换成自己的 AppID
+  baseUrl: "https://cki2ac.laf.run", // 这里的 <AppID> 需要换成自己的 AppID
   getAccessToken: ()  => localStorage.getItem('access_token'),
   timeout: 180000,
 });
 
 const router = useRouter();
 
-const url = 'https://ztvufn.laf.dev/gpt';
+const url = 'https://cki2ac.laf.run/gpt';
 
 const newMessage = ref("");
 const messages = ref([]);
