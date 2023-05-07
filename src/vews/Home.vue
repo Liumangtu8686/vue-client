@@ -52,59 +52,6 @@ if (localStorage.getItem('access_token') != null) {
 
 // ===============================function===============================
 
-async function submitPost(messages, res) {
-  isLoading.value = true; 
-  const txt2imgUrl = 'https://2a966fe2.r1.cpolar.top/sdapi/v1/txt2img';
-  const data = {
-    prompt: res.text,
-    enable_hr: false,
-    denoising_strength: 0,
-    firstphase_width: 0,
-    firstphase_height: 0,
-    hr_scale: 2,
-    hr_second_pass_steps: 0,
-    hr_resize_x: 0,
-    hr_resize_y: 0,
-    styles: [
-    ""
-    ],
-    seed: -1,
-    subseed: -1,
-    subseed_strength: 0,
-    seed_resize_from_h: -1,
-    seed_resize_from_w: -1,
-    batch_size: 1,
-    n_iter: 1,
-    steps: 28,
-    cfg_scale: 7,
-    width: 512,
-    height: 512,
-    restore_faces: false,
-    tiling: false,
-    do_not_save_samples: false,
-    do_not_save_grid: false,
-    negative_prompt: "",
-    eta: 0,
-    s_churn: 0,
-    s_tmax: 0,
-    s_tmin: 0,
-    s_noise: 1,
-    override_settings: {},
-    override_settings_restore_afterwards: true,
-    script_args: [],
-    send_images: true,
-    save_images: true,
-    alwayson_scripts: {}
-  };
-  const response = await axios.post(txt2imgUrl, data);
-  const b64Image = response.data.images[0];
-  res.imageUrl = getEncodedImage(b64Image);
-  messages.value.push(res);
-  isLoading.value = false; // 隐藏加载动画
-  setScreen();
-  getAmount();
-}
-
 function getEncodedImage(b64Image) {
   const decodedImage = atob(b64Image);
   const arrayBuffer = new ArrayBuffer(decodedImage.length);
@@ -404,7 +351,7 @@ async function sendQuickMessage() {
     // 显示加载动画
     isLoading.value = true; // 显示加载动画
 // 与云函数逻辑一样，有上下文 id 就传入
-    res = await cloud.invoke("robot", {messages: messages.value });
+    res = await cloud.invoke("robot", {messages: messages.value, isDrawing: isGragh.value});
     
     if (res.code == 0) {
       return ElMessage({
@@ -423,14 +370,14 @@ async function sendQuickMessage() {
     res.content = responseText;
     res.text = responseText;
     if (isGragh.value) { //画图
-      submitPost(messages, res)
+      res.imageUrl = getEncodedImage(res.text)
+      messages.value.push(res);
     } else {
       messages.value.push(res);
-      setScreen();
-      getAmount();
-      // 收到服务器回复后隐藏加载动画
-      isLoading.value = false; // 隐藏加载动画
     }
+    isLoading.value = false; // 隐藏加载动画
+    setScreen();
+    getAmount();
   } catch (error) {
     console.log(error);
     setScreen();
