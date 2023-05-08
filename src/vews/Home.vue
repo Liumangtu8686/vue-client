@@ -363,7 +363,7 @@ async function sendQuickMessage() {
     res.type = "received";
     res.role = 'assistant';
    
-    if (isGragh.value) { //画图
+    if (isGragh.value && res.text !== "**************************") { //画图
       res.imageUrl = getEncodedImage(res.text);
       messages.value.push(res);
     } else {
