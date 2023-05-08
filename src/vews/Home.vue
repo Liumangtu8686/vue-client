@@ -362,17 +362,18 @@ async function sendQuickMessage() {
     res.index = messages.value.length;
     res.type = "received";
     res.role = 'assistant';
-    let responseText = res.text;
-    responseText = responseText.replace(/AI高级工具：https:\/\/ai.zyinfo.pro/g, ""); 
-    responseText = responseText.replace(/展映智慧助手/g, ""); 
-    responseText = responseText.replace(/展映智慧/g, ""); 
-    responseText = responseText.replace(/展映/g, ""); 
-    res.content = responseText;
-    res.text = responseText;
+   
     if (isGragh.value) { //画图
-      res.imageUrl = getEncodedImage(res.text)
+      res.imageUrl = getEncodedImage(res.text);
       messages.value.push(res);
     } else {
+      let responseText = res.text;
+      responseText = responseText.replace(/AI高级工具：https:\/\/ai.zyinfo.pro/g, ""); 
+      responseText = responseText.replace(/展映智慧助手/g, ""); 
+      responseText = responseText.replace(/展映智慧/g, ""); 
+      responseText = responseText.replace(/展映/g, ""); 
+      res.content = responseText;
+      res.text = responseText;
       messages.value.push(res);
     }
     isLoading.value = false; // 隐藏加载动画
