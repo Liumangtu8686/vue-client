@@ -154,6 +154,78 @@ async function sendMessage() {
 }
 
 
+// async function sendStreamMessage() {
+//   //发送时验证登录
+//   if (localStorage.getItem("access_token") == null)
+//       router.replace('/login')
+//   //判断用户次数
+//   if (chatCount.value <= 0){
+//     {
+//       const managerData = { text: "充值请备注注册手机号或者登录用户名,入群请添加管理员好友", type: "manager", index: messages.value.length};
+//       messages.value.push(managerData);
+//     }
+    
+//     setScreen();
+//     return ElMessage({
+//       message: "剩余次数不足先前往充值",
+//       type: "error",
+//     });
+//   }
+//  // 我们提问的内容
+//   const message = newMessage.value;
+//   if (message == "") {
+//     isLoading.value = false;
+//     setScreen();
+//     return ElMessage({
+//       message: "问题不能为空",
+//       type: "error",
+//     });
+//   }
+//   newMessage.value = '';
+//   const curMessageIndex = messages.value.length;
+//   const data = { text: message, type: "sent", index: curMessageIndex, uid : localStorage.getItem("uid") };
+//   messages.value.push(data);
+//   const nextMessageIndex = messages.value.length;
+//   // 在聊天框元素实例上手动触发scroll事件，以检测当前的滚动位置是否需要自动滚动到底部
+//   setScreen();
+//   try {
+//     // 显示加载动画
+//     isLoading.value = true; // 显示加载动画
+//     chatCount.value = chatCount.value - 1;
+//     axios({
+//       url:'https://ztvufn.laf.dev/gpt',    
+//       method: 'post',
+//       data,
+//       responseType: 'stream',
+//       timeout: 180000,
+//       onDownloadProgress: (progressEvent) => {
+//         const xhr = progressEvent.target;
+//         const { responseText } = xhr;
+//         if (!messages.value[nextMessageIndex]) {
+//           isLoading.value = false; // 关闭动画
+//           const data = { text: '', type: 'received', index: nextMessageIndex };
+//           messages.value.push(data);
+//         }
+//         const newData = responseText.substring(messages.value[nextMessageIndex].text.length);
+//         messages.value[curMessageIndex + 1].text += newData;
+//         setScreen();
+//         getchatCount();
+//       }
+//     }).then((response) => {
+//      // 监听end事件
+      
+//     }).catch((error) => {
+//       isLoading.value = false; // 显示加载动画
+//       console.error(error);
+//       setScreen();
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     isLoading.value = false;
+//     setScreen();
+//     return;
+//   }
+// }
 async function sendStreamMessage() {
   //发送时验证登录
   if (localStorage.getItem("access_token") == null)
@@ -193,7 +265,7 @@ async function sendStreamMessage() {
     isLoading.value = true; // 显示加载动画
     chatCount.value = chatCount.value - 1;
     axios({
-      url:'https://ztvufn.laf.dev/gpt',    
+      url:'https://ztvufn.laf.dev/claude',    
       method: 'post',
       data,
       responseType: 'stream',
