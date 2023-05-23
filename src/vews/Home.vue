@@ -9,14 +9,12 @@ const md = new MarkdownIt();
 
 // 创建cloud对象
 const cloud = new Cloud({
-  baseUrl: "https://cki2ac.laf.run", // 这里的 <AppID> 需要换成自己的 AppID
+  baseUrl: "https://ztvufn.laf.dev", // 这里的 <AppID> 需要换成自己的 AppID
   getAccessToken: ()  => localStorage.getItem('access_token'),
   timeout: 180000,
 });
 
 const router = useRouter();
-
-const url = 'https://cki2ac.laf.run/gpt';
 
 const newMessage = ref("");
 const messages = ref([]);
@@ -27,16 +25,13 @@ const isLoading = ref(false);
 const messageList = ref(null);
 
 //记忆模式用户剩余次数
-const amount = ref(0);
+const chatCount = ref(0);
 
-//普通模式用户剩余次数
-const normalCount = ref(0);
-
-//是否普通模式
-const isNormal = ref(true);
+//画图模式用户剩余次数
+const drawCount = ref(0);
 
 //记忆模式 流模式:true 非流模式：false
-const isStreamMode = ref(false);
+const isStreamMode = ref(true);
 
 //是否画图模式
 const isGragh = ref(false);
@@ -66,12 +61,7 @@ function getEncodedImage(b64Image) {
 }
 
 // 获取用户剩余次数
-getAmount();
-//getList();
-async function getList() {
-    const res = await cloud.invoke("get-list");
-    messages.value = res.data;
-} 
+getchatCount();
 
 function copyText(text) {
  // 创建临时textarea元素
@@ -96,11 +86,6 @@ function copyText(text) {
     document.getSelection().addRange(selected);
   }
 }
-
-onMounted(() => {
-
-});
-
 
 const is3DImage = (text) => {
   return text.endsWith('.glb') || text.endsWith('.gltf');
@@ -130,7 +115,7 @@ watch(newMessage, (newValue) => {
 });
 
 // 获取用户剩余次数
-async function getAmount() {
+async function getchatCount() {
   if (!localStorage.getItem("access_token")) return;
   const res = await cloud.invoke("get-amount");
   if (res.code == 0) {
@@ -139,8 +124,8 @@ async function getAmount() {
       type: "error",
     });
   }
-  amount.value = res.amount;
-  normalCount.value = res.normalCount;
+  chatCount.value = res.chatCount;
+  drawCount.value = res.drawCount;
 }
 
 // 重置上下文节点
@@ -156,17 +141,15 @@ async function resetParentMessageId() {
 
 async function sendMessage() {
   if (isGragh.value) {
-    sendQuickMessage();
+    sendTextToImg();
   } else {
-    if (isNormal.value) {
-      sendQuickMessage();
+    
+    if (isStreamMode.value) {
+      sendStreamMessage();
     } else {
-      if (isStreamMode.value) {
-        sendStreamMessage();
-      } else {
-        sendNotStreamMessage();
-      }
+      sendNotStreamMessage();
     }
+    
   } 
 }
 
@@ -176,7 +159,7 @@ async function sendStreamMessage() {
   if (localStorage.getItem("access_token") == null)
       router.replace('/login')
   //判断用户次数
-  if (amount.value <= 0){
+  if (chatCount.value <= 0){
     {
       const managerData = { text: "充值请备注注册手机号或者登录用户名,入群请添加管理员好友", type: "manager", index: messages.value.length};
       messages.value.push(managerData);
@@ -208,9 +191,9 @@ async function sendStreamMessage() {
   try {
     // 显示加载动画
     isLoading.value = true; // 显示加载动画
-    amount.value = amount.value - 1;
+    chatCount.value = chatCount.value - 1;
     axios({
-      url,    
+      url:'https://ztvufn.laf.dev/gpt',    
       method: 'post',
       data,
       responseType: 'stream',
@@ -226,7 +209,7 @@ async function sendStreamMessage() {
         const newData = responseText.substring(messages.value[nextMessageIndex].text.length);
         messages.value[curMessageIndex + 1].text += newData;
         setScreen();
-        getAmount();
+        getchatCount();
       }
     }).then((response) => {
      // 监听end事件
@@ -256,7 +239,7 @@ async function sendNotStreamMessage() {
   if (localStorage.getItem("access_token") == null)
       router.replace('/login')
   //判断用户次数
-  if (amount.value <= 0){
+  if (chatCount.value <= 0){
     {
       const managerData = { text: "充值请备注注册手机号或者登录用户名,入群请添加管理员好友", type: "manager", index: messages.value.length};
       messages.value.push(managerData);
@@ -290,17 +273,17 @@ async function sendNotStreamMessage() {
   try {
     // 显示加载动画
     isLoading.value = true; // 显示加载动画
-    res = await cloud.invoke("test", { message });
+    res = await cloud.invoke("gpt4", { text: message});
     if (res.code == 0) {
       return ElMessage({
-        message: res.err,
+        message: res.error,
         type: "error",
       });
     }
     const receivedData = { text: res.text, type: "received", index: messages.value.length};
     messages.value.push(receivedData);
     setScreen();
-    getAmount();
+    getchatCount();
     // 收到服务器回复后隐藏加载动画
     isLoading.value = false; // 隐藏加载动画
   } catch (error) {
@@ -311,12 +294,12 @@ async function sendNotStreamMessage() {
   }
 }
 
-async function sendQuickMessage() {
+async function sendTextToImg() {
   //发送时验证登录
   if (localStorage.getItem("access_token") == null)
       router.replace('/login')
   //判断用户次数
-  if (normalCount.value <= 0){
+  if (drawCount.value <= 0){
     {
       const managerData = { text: "充值请备注注册手机号或者登录用户名,入群请添加管理员好友", type: "manager", index: messages.value.length};
       messages.value.push(managerData);
@@ -329,7 +312,6 @@ async function sendQuickMessage() {
     });
   }
 
-  let graghCmd = "接下来我会给你指令，我希望你用英文翻译描述尽可能准确点，除了描述不要回复任何话，只要翻译。指令如下：";
  // 我们提问的内容
   const message = newMessage.value;
   if (message == "") {
@@ -342,7 +324,7 @@ async function sendQuickMessage() {
   }
   newMessage.value = '';
 
-  const data = { text: message, type: "sent", index: messages.value.length, role:'user',content: isGragh.value ? graghCmd + message : message};
+  const data = { text: message, type: "sent", index: messages.value.length};
   messages.value.push(data);
   // 在聊天框元素实例上手动触发scroll事件，以检测当前的滚动位置是否需要自动滚动到底部
   setScreen();
@@ -351,45 +333,32 @@ async function sendQuickMessage() {
     // 显示加载动画
     isLoading.value = true; // 显示加载动画
 // 与云函数逻辑一样，有上下文 id 就传入
-    res = await cloud.invoke("robot", {messages: messages.value, isDrawing: isGragh.value});
+    res = await cloud.invoke("sdRobot", {message: message, option: 1});
     
     if (res.code == 0) {
       return ElMessage({
-        message: res.err,
+        message: res.error,
         type: "error",
       });
     }
     res.index = messages.value.length;
     res.type = "received";
-    res.role = 'assistant';
-   
-    if (isGragh.value && res.text !== "**************************") { //画图
+    if (res.code == 1) { //画图
       res.imageUrl = getEncodedImage(res.text);
       messages.value.push(res);
     } else {
-      let responseText = res.text;
-      responseText = responseText.replace(/AI高级工具：https:\/\/ai.zyinfo.pro/g, ""); 
-      responseText = responseText.replace(/展映智慧助手/g, ""); 
-      responseText = responseText.replace(/展映智慧/g, ""); 
-      responseText = responseText.replace(/展映/g, ""); 
-      res.content = responseText;
-      res.text = responseText;
+      res.content = res.text;
       messages.value.push(res);
     }
     isLoading.value = false; // 隐藏加载动画
     setScreen();
-    getAmount();
+    getchatCount();
   } catch (error) {
     console.log(error);
     setScreen();
     isLoading.value = false; // 隐藏加载动画
     return;
   }
-}
-
-async function handleCheckboxChange() {
-  messages.value = [];
-  isNormal.value = !isNormal.value;
 }
 
 async function handleCheckboxStreamChange() {
@@ -423,14 +392,11 @@ async function loginIn() {
           <span style="text-align: center;color:#9ca2a8">&nbsp;&nbsp;画图：</span>
           <input type="checkbox" id="keep"  style="min-width:10px;"  v-mode = "isGragh" @change="handleCheckboxGraghChange">
           <label for="keep"></label>
-          <span style="text-align: center;color:#9ca2a8">&nbsp;&nbsp;记忆模式：</span>
-          <input type="checkbox" id="keep"  style="min-width:10px;"  v-mode = "isNormal" @change="handleCheckboxChange" >
+          <span style="text-align: center;color:#9ca2a8" v-if = "!isGragh">&nbsp;&nbsp;gpt3.5：</span>
+          <input type="checkbox" id="keep"  checked="checked" style="min-width:10px;"  v-mode = "isStreamMode" @change="handleCheckboxStreamChange"  v-if = "!isGragh">
           <label for="keep"></label>
-          <span style="text-align: center;color:#9ca2a8" v-if = "!isNormal">&nbsp;&nbsp;流式：</span>
-          <input type="checkbox" id="keep"  style="min-width:10px;"  v-mode = "isStreamMode" @change="handleCheckboxStreamChange"  v-if = "!isNormal">
-          <label for="keep"></label>
-          <button class="res-button" @click="resetParentMessageId" v-if = "!isNormal">清空机器人历史记忆</button>
-          <h class="amount" style="margin-right: 10px;" v-if = "!isNormal">{{ amount }}</h>
+          <button class="res-button" @click="resetParentMessageId" v-if = "isStreamMode">清空机器人历史记忆</button>
+          <h class="chatCount" style="margin-right: 10px;" v-if = "!isGragh">{{ chatCount }}</h>
           <span style="text-align: center;color:#9ca2a8">&nbsp;&nbsp;</span>
           <select id="preset-text" v-model="newMessage" style="width:calc(100% - 90px);max-width:200px;">
               <option value="">预设话术列表</option>
@@ -640,7 +606,7 @@ async function loginIn() {
   margin-bottom: 20px;
 }
 
-.amount {
+.chatCount {
   float: right;
   width: 100px;
   height: 40px;

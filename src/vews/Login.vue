@@ -6,7 +6,7 @@ import { ElMessage } from "element-plus";
 
   // 创建cloud对象
 const cloud = new Cloud({
-  baseUrl: "https://cki2ac.laf.run", // 这里的 <AppID> 需要换成自己的 AppID
+  baseUrl: "https://ztvufn.laf.dev", // 这里的 <AppID> 需要换成自己的 AppID
     getAccessToken: ()  => localStorage.getItem('access_token'),
   timeout: 60000,
 });
